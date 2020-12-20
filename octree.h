@@ -151,33 +151,38 @@ public:
     };
 
 
-    void split(int x1, int y1, int x2, int y2) {
-        int m = floor((y2 - y1) / (x2 - x1));
-        //Y = m . x + c
-        int c = y1 -(m * x1);
-        vector<punto *> puntos;
-        llenar_puntos(root, puntos, m, c, x1, x2, y1, y2);
+    void split(int x1, int z1, int x2, int z2) {
+        double m;
+        if(x2 == x1)m=0;
+        else
+        m = ( (double)z2 - (double)z1) / ((double)x2 - (double)x1);
+        printf("%f",m);
+        //X = m . Z + c
 
-        cimg_library::CImg<unsigned char> img(512, 41);
+        double c = z1 -(m * x1);
+        vector<punto *> puntos;
+        llenar_puntos(root, puntos, m, c, x1, x2, z1, z2);
+
+        cimg_library::CImg<unsigned char> img(512, 512);
         for (auto c : puntos) {
-            cout << c->x << " " << c->y << " " << c->z << " " << c->color << endl;
-            img(c->x, c->z) = c->color;
+            //cout << c->x << " " << c->y << " " << c->z << " " << c->color << endl;
+            img(c->x, c->y) = c->color;
         }
         img.display();
     }
 
 
-    void llenar_puntos(Node *node, vector<punto *>& puntos, int m, int c, int x1, int y1, int x2, int y2) {
+    void llenar_puntos(Node *node, vector<punto *>& puntos, double m, float c, int x1, int z1, int x2, int z2) {
         if (node->is_terminal) {
             for (int i = node->x0; i < node->xf; i++) {
                 int x_temp = i;
-                int y_temp = m * i + c;
-                if (y_temp > node->y0 && y_temp < node->yf) {
-                    cout << x_temp << " " << y_temp << " " << endl;
-                    for (int j = node->z0; j < node->zf; j++){
+                int z_temp = m * i + c;
+                if (z_temp >= node->z0 && z_temp <= node->zf) {
+                    //cout << x_temp << " " << z_temp << " " << endl;
+                    for (int j = node->y0; j < node->yf; j++){
                         //if (x_temp <= x2 and (x_temp >= x1)) {
                             //if(y_temp <= y2 and (y_temp >= y1))
-                            puntos.push_back(new punto(x_temp, y_temp, j, node->color));
+                            puntos.push_back(new punto(x_temp, j, z_temp, node->color));
                         //}
                     }
 
@@ -187,12 +192,22 @@ public:
         }
 
         for (int i = 0; i < 8; i++) {
-            if (node->children[i]->x0 * m + c > node->yf || node->children[i]->xf * m + c < node->y0) {
-                continue;
-            } else {
-                llenar_puntos(node->children[i], puntos, m, c, x1, y1, x2, y2);
+            if(m >= 0){
+                if (node->children[i]->x0 * m + c > node->zf || node->children[i]->xf * m + c < node->z0) {
+                    continue;
+                } else {
+                    llenar_puntos(node->children[i], puntos, m, c, x1, z1, x2, z2);
+                }
+            }
+            else{
+                if (node->children[i]->x0 * m + c < node->zf || node->children[i]->xf * m + c > node->z0) {
+                    continue;
+                } else {
+                    llenar_puntos(node->children[i], puntos, m, c, x1, z1, x2, z2);
+                }
             }
         }
         return;
     }
 };
+
