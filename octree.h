@@ -4,6 +4,33 @@
 
 using namespace std;
 
+void get_Corte(vector<vector<vector<int>>> cubo, int x1,int z1,int x2,int z2){
+
+    double m;
+    if(x2 == x1)m=0;
+    else
+        m = ( (double)z2 - (double)z1) / ((double)x2 - (double)x1);
+    printf("%f",m);
+    //X = m . Z + c
+
+    cimg_library::CImg<unsigned char> img2(512, 512);
+    double c = z1 -(m * x1);
+    for(int i = 0; i < cubo.size(); i++){
+        for(int j = 0; j < cubo[i].size(); j++){
+            for(int k = 0; k < cubo[i][j].size(); k++){
+                //cout << i << " " << (int)m*j+c << endl;
+                if(i == (int)(m*j+c)){
+                        cout << "Hola";
+                        //cout << c->x << " " << c->y << " " << c->z << " " << c->color << endl;
+                        img2(j, k) = cubo[i][j][k];
+                }
+            }
+        }
+    }
+    img2.display();
+}
+
+
 class Octree {
 
 private:
@@ -150,8 +177,66 @@ public:
         void colored(int color) { this->color = color; };
     };
 
+    void split_frente(int y1, int z1, int y2, int z2) {
+        double m;
+        if(y2 == y1)m=0;
+        else
+            m = ( (double)z2 - (double)z1) / ((double)y2 - (double)y1);
+        printf("%f",m);
+        //X = m . Z + c
 
-    void split(int x1, int z1, int x2, int z2) {
+        double c = z1 -(m * y1);
+        vector<punto *> puntos;
+        llenar_puntos_frente(root, puntos, m, c, y1, y2, z1, z2);
+
+        cimg_library::CImg<unsigned char> img(511, 40);
+        for (auto c : puntos) {
+            //cout << c->x << " " << c->y << " " << c->z << " " << c->color << endl;
+            img(c->x, c->z) = c->color;
+        }
+        img.display();
+    }
+
+    void llenar_puntos_frente(Node *node, vector<punto *>& puntos, double m, float c, int y1, int z1, int y2, int z2) {
+        if (node->is_terminal) {
+            for (int i = node->y0; i < node->yf; i++) {
+                int y_temp = i;
+                int z_temp = m * i + c;
+                if (z_temp >= node->z0 && z_temp <= node->zf) {
+                    //cout << x_temp << " " << z_temp << " " << endl;
+                    for (int j = node->x0; j < node->xf; j++){
+                        //if (x_temp <= x2 and (x_temp >= x1)) {
+                        //if(y_temp <= y2 and (y_temp >= y1))
+                        puntos.push_back(new punto(j, y_temp, z_temp, node->color));
+                        //}
+                    }
+
+                }
+            }
+            return;
+        }
+
+        for (int i = 0; i < 8; i++) {
+            if(m >= 0){
+                if (node->children[i]->y0 * m + c > node->zf || node->children[i]->yf * m + c < node->z0) {
+                    continue;
+                } else {
+                    llenar_puntos_frente(node->children[i], puntos, m, c, y1, z1, y2, z2);
+                }
+            }
+            else{
+                if (node->children[i]->y0 * m + c < node->z0 || node->children[i]->yf * m + c > node->zf) {
+                    continue;
+                } else {
+                    llenar_puntos_frente(node->children[i], puntos, m, c, y1, z1, y2, z2);
+                }
+            }
+        }
+        return;
+    }
+
+
+    void split_costado(int x1, int z1, int x2, int z2) {
         double m;
         if(x2 == x1)m=0;
         else
@@ -161,7 +246,7 @@ public:
 
         double c = z1 -(m * x1);
         vector<punto *> puntos;
-        llenar_puntos(root, puntos, m, c, x1, x2, z1, z2);
+        llenar_puntos_costado(root, puntos, m, c, x1, z1, x2, z2);
 
         cimg_library::CImg<unsigned char> img(512, 512);
         for (auto c : puntos) {
@@ -172,7 +257,7 @@ public:
     }
 
 
-    void llenar_puntos(Node *node, vector<punto *>& puntos, double m, float c, int x1, int z1, int x2, int z2) {
+    void llenar_puntos_costado(Node *node, vector<punto *>& puntos, double m, float c, int x1, int z1, int x2, int z2) {
         if (node->is_terminal) {
             for (int i = node->x0; i < node->xf; i++) {
                 int x_temp = i;
@@ -196,18 +281,17 @@ public:
                 if (node->children[i]->x0 * m + c > node->zf || node->children[i]->xf * m + c < node->z0) {
                     continue;
                 } else {
-                    llenar_puntos(node->children[i], puntos, m, c, x1, z1, x2, z2);
+                    llenar_puntos_costado(node->children[i], puntos, m, c, x1, z1, x2, z2);
                 }
             }
             else{
-                if (node->children[i]->x0 * m + c < node->zf || node->children[i]->xf * m + c > node->z0) {
+                if (node->children[i]->x0 * m + c < node->z0 || node->children[i]->xf * m + c > node->zf) {
                     continue;
                 } else {
-                    llenar_puntos(node->children[i], puntos, m, c, x1, z1, x2, z2);
+                    llenar_puntos_costado(node->children[i], puntos, m, c, x1, z1, x2, z2);
                 }
             }
         }
         return;
     }
 };
-
