@@ -3,9 +3,10 @@
 #include <dirent.h>
 #include <string>
 #include <vector>
+#include <algorithm>
 #include <iostream>
 
-std::string lista[41] = {};
+string lista[40];
 std::vector<std::vector<std::vector<int>>> cubo = {};
 
 using namespace std;
@@ -15,7 +16,6 @@ using namespace cimg_library;
 
 void listdir(string initStrPath){
     struct dirent *dir;
-    int counter = 0;
     DIR *dp = opendir(initStrPath.c_str());
     if(dp){
         while((dir=readdir(dp)) != NULL){
@@ -26,8 +26,11 @@ void listdir(string initStrPath){
                 listdir(strPath);
             }else{
                 strPath = initStrPath + "/" + dir->d_name;
-                lista[counter] = strPath;
-                counter+=1;
+                string temp = strPath;
+                size_t index = strPath.find('I');
+                size_t index_2 = strPath.find('.');
+                string number = strPath.substr(index+1, index+1-index_2);
+                lista[stoi(number)] = strPath;
             }
         }
         closedir(dp);
@@ -86,13 +89,13 @@ CImg<int> QuadTree::binarizeColors(CImg<float>& img){
 int main() {
     vector<vector<int>> val;
     listdir("/home/jpalexander1706/CLionProjects/octree/datoscerebros/paciente1/1");
-    cubo.resize(41,val);
-    /*
+    cubo.resize(40,val);
+
     for(auto c : lista){
         cout << c << endl;
-    }*/
+    }
     int counter = 0;
-    for (int i = 0; i < 41; i++){
+    for (int i = 0; i < 40; i++){
         cubo[i].resize(512);
         CImg <float> img(lista[i].c_str());
         CImg <int> img_F = binarize(img, 3825);
@@ -107,7 +110,9 @@ int main() {
     Octree octree;
 
     octree.insert(cubo);
-    octree.split(100, 200, 300, 400);
+    octree.split_costado(0,2 , 511, 2);
+    get_Corte(cubo, 0, 2, 511, 2);
+    //octree.split_frente(0,39 , 511, 0);
 
     return 0;
 }
