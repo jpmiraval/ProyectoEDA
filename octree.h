@@ -154,24 +154,38 @@ public:
     void split(int x1, int y1, int x2, int y2) {
         int m = floor((y2 - y1) / (x2 - x1));
         //Y = m . x + c
-        int c = y1 / (m * x1);
+        int c = y1 -(m * x1);
         vector<punto *> puntos;
         llenar_puntos(root, puntos, m, c, x1, x2, y1, y2);
+
+        cimg_library::CImg<unsigned char> img(512, 41);
+        for (auto c : puntos) {
+            cout << c->x << " " << c->y << " " << c->z << " " << c->color << endl;
+            img(c->x, c->z) = c->color;
+        }
+        img.display();
     }
 
-    void llenar_puntos(Node *node, vector<punto *> &puntos, int m, int c, int x1, int y1, int x2, int y2) {
+
+    void llenar_puntos(Node *node, vector<punto *>& puntos, int m, int c, int x1, int y1, int x2, int y2) {
         if (node->is_terminal) {
             for (int i = node->x0; i < node->xf; i++) {
                 int x_temp = i;
                 int y_temp = m * i + c;
                 if (y_temp > node->y0 && y_temp < node->yf) {
-                    for (int j = node->z0; j < node->zf; j++)
-                        if (x_temp < x2 and x_temp > x1 and y_temp < y2 and y_temp > y1)
+                    cout << x_temp << " " << y_temp << " " << endl;
+                    for (int j = node->z0; j < node->zf; j++){
+                        //if (x_temp <= x2 and (x_temp >= x1)) {
+                            //if(y_temp <= y2 and (y_temp >= y1))
                             puntos.push_back(new punto(x_temp, y_temp, j, node->color));
+                        //}
+                    }
+
                 }
             }
             return;
         }
+
         for (int i = 0; i < 8; i++) {
             if (node->children[i]->x0 * m + c > node->yf || node->children[i]->xf * m + c < node->y0) {
                 continue;
@@ -179,12 +193,6 @@ public:
                 llenar_puntos(node->children[i], puntos, m, c, x1, y1, x2, y2);
             }
         }
-        cimg_library::CImg<unsigned char> img(x2-x1, 41);
-        for (auto c : puntos) {
-            img(c->x-x1, c->z) = c->color;
-        }
-        img.display();
-
         return;
     }
 };
